@@ -1,45 +1,16 @@
-# Jellyfin Desktop
+# Jellyfin Desktop (Personal Fork)
 
-> [!WARNING]
-> This client is still under active development and may have bugs or missing features.
+Personal Windows x64 build of [jellyfin/jellyfin-desktop](https://github.com/jellyfin/jellyfin-desktop) with cherry-picked PRs and local fixes.
 
-A [Jellyfin](https://jellyfin.org) desktop client built on [CEF](https://github.com/chromiumembedded/cef) and [mpv](https://mpv.io/). A complete rewrite of the previous [Qt-based client](https://github.com/jellyfin-archive/jellyfin-desktop-qt/).
+## Merged PRs
+- #346 — Improve Dolby Vision handling on Windows
+- #360 — Fix mouse and context menu offset on HiDPI displays
+- #363 — Window scale fixes; Context menu visibility fixes
 
-## Downloads
-### Linux
-- AppImage
-  - [x86_64](https://nightly.link/jellyfin/jellyfin-desktop/workflows/build-linux-appimage/main/linux-appimage-x86_64.zip)
-  - [aarch64](https://nightly.link/jellyfin/jellyfin-desktop/workflows/build-linux-appimage/main/linux-appimage-aarch64.zip)
-- Arch Linux (AUR): [jellyfin-desktop-git](https://aur.archlinux.org/packages/jellyfin-desktop-git)
-- [Flatpak (non-Flathub bundle)](https://nightly.link/jellyfin/jellyfin-desktop/workflows/build-linux-flatpak/main/linux-flatpak-x86_64.zip)
+## Local Fixes
+- Use `SetPropertyStringAsync` instead of `SetOptionString` for `target-colorspace-hint` (post-init option setting is a no-op in mpv)
+- DV detection checks specific codec fields (`Codec`, `CodecTag`, `Container`) instead of full JSON blob to avoid false positives
 
-### macOS
-- [Apple Silicon](https://nightly.link/jellyfin/jellyfin-desktop/workflows/build-macos/main/macos-arm64.zip)
-- [Intel](https://nightly.link/jellyfin/jellyfin-desktop/workflows/build-macos/main/macos-x86_64.zip)
+## Build
 
-After installing, remove quarantine: 
-```
-sudo xattr -cr /Applications/Jellyfin\ Desktop.app
-```
-
-### Windows
-- [x64](https://nightly.link/jellyfin/jellyfin-desktop/workflows/build-windows/main/windows-x64.zip)
-- [arm64](https://nightly.link/jellyfin/jellyfin-desktop/workflows/build-windows/main/windows-arm64.zip)
-
-
-## Development
-
-This project uses [just](https://github.com/casey/just) as a command runner.
-
-```
-Available recipes:
-    list              # List recipes
-    update-deps *args # Update vendored deps
-    clean             # Remove build artifacts
-    build             # Build the app
-    test              # Run tests
-    run *args         # Run the app
-    run-mpv *args     # Run the mpv CLI
-    appimage ...
-    flatpak ...
-```
+Windows x64 only, via GitHub Actions on this fork.
