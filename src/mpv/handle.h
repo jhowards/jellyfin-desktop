@@ -183,7 +183,9 @@ public:
      #ifdef _WIN32
         // Windows DV playback falls back to HDR during active playback unless
         // mpv colorspace hinting is disabled for detected Dolby Vision media.
-        SetOptionString("target-colorspace-hint", opts.isDolbyVision ? "no" : "yes");
+        // Must use SetPropertyStringAsync — SetOptionString only works before
+        // mpv_initialize(), but LoadFile is called during active playback.
+        SetPropertyStringAsync("target-colorspace-hint", opts.isDolbyVision ? "no" : "yes");
      #endif
         std::string optsStr = "start=" + std::to_string(opts.startSecs)
                             + ",pause=yes";
