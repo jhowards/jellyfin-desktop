@@ -18,6 +18,7 @@
 class MpvHandle {
 private:
     mpv_handle* handle_;
+    std::string savedHwdec_;   // User's hwdec preference, restored after DV overrides
 
 public:
     explicit MpvHandle(mpv_handle* h = nullptr) : handle_(h) {}
@@ -85,7 +86,7 @@ public:
     }
 
     // Typed option setters (must be called before Initialize)
-    void SetHwdec(const std::string& mode)          { SetOptionString("hwdec", mode); }
+    void SetHwdec(const std::string& mode)          { savedHwdec_ = mode; SetOptionString("hwdec", mode); }
     void SetAudioSpdif(const std::string& codecs)    { SetOptionString("audio-spdif", codecs); }
     void SetAudioExclusive(bool v)                   { SetOptionFlag("audio-exclusive", v); }
     void SetAudioChannels(const std::string& layout)  { SetOptionString("audio-channels", layout); }
@@ -181,11 +182,26 @@ public:
         pendingValid_ = true;
 
      #ifdef _WIN32
-        // Windows DV playback falls back to HDR during active playback unless
-        // mpv colorspace hinting is disabled for detected Dolby Vision media.
-        // Must use SetPropertyStringAsync — SetOptionString only works before
-        // mpv_initialize(), but LoadFile is called during active playback.
-        SetPropertyStringAsync("target-colorspace-hint", opts.isDolbyVision ? "no" : "yes");
+        if (opts.isDolbyVision) {
+            // DV-specific settings: force HDR passthrough, source metadata
+            // mode (preserves DV RPU for display detection), bt.2390 tone
+            // mapping, and auto-copy hardware decoding (copy-back gives
+            // mpv access to DV metadata that direct d3d11va may not
+            // forward).
+            SetPropertyStringAsync("target-colorspace-hint", "yes");
+            SetPropertyStringAsync("target-colorspace-hint-mode", "source");
+            SetPropertyStringAsync("tone-mapping", "bt.2390");
+            SetPropertyStringAsync("hwdec", "auto-copy");
+        } else {
+            // Restore all properties that the DV branch may have overridden.
+            // Without this, DV settings leak into subsequent non-DV files.
+            SetPropertyStringAsync("target-colorspace-hint", "auto");
+            SetPropertyStringAsync("target-colorspace-hint-mode", "target");
+            SetPropertyStringAsync("tone-mapping", "auto");
+            // Restore the user's hwdec preference (set at startup via
+            // SetHwdec; takes effect on the launch where it was chosen).
+            SetPropertyStringAsync("hwdec", savedHwdec_.empty() ? "no" : savedHwdec_);
+        }
      #endif
         std::string optsStr = "start=" + std::to_string(opts.startSecs)
                             + ",pause=yes";
@@ -344,6 +360,15 @@ private:
 #ifdef _WIN32
         // Tell mpv to load window icon from our exe resources
         _putenv_s("MPV_WINDOW_ICON", "IDI_ICON1");
+
+        // Vulkan/gpu-next for best DV/HDR metadata handling
+        SetOptionString("vo", "gpu-next");
+        SetOptionString("gpu-api", "vulkan");
+        SetOptionString("gpu-context", "winvk");
+
+        // Compute HDR peak dynamically per-frame (mpv's default; explicit
+        // here for clarity since DV handling depends on it).
+        SetOptionString("hdr-compute-peak", "yes");
 #endif
 
         // Keep window open when idle (no media loaded).

@@ -12,7 +12,7 @@ inline std::vector<std::string> hwdecOptions() {
         "vaapi", "nvdec", "vulkan",
 #endif
 #ifdef _WIN32
-        "d3d11va", "nvdec", "vulkan",
+        "auto-copy", "d3d11va", "nvdec", "vulkan",
 #endif
 #ifdef __APPLE__
         "videotoolbox", "vulkan",

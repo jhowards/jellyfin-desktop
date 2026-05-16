@@ -257,9 +257,14 @@ static int run_with_cef(int mw, int mh,
         mpv::set_window_pixels(mw, mh);
     }
 
+    // display-hidpi-scale is mpv's live measurement; prefer it over
+    // g_platform.get_scale() which may be a static/platform-estimated value.
+    // This matches the resize block above which also keys off
+    // display-hidpi_scale to decide whether to scale-correct the window.
     float scale = display_hidpi_scale > 0.0
         ? static_cast<float>(display_hidpi_scale)
         : g_platform.get_scale();
+    if (scale <= 0.0f) scale = 1.0f;
     int lw = static_cast<int>(mw / scale);
     int lh = static_cast<int>(mh / scale);
 
