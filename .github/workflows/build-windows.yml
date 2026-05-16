@@ -15,21 +15,7 @@ concurrency:
 
 jobs:
   build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: x64
-            runner: windows-latest
-            platform: windows64
-            msystem: CLANG64
-            pkg_prefix: mingw-w64-clang-x86_64
-          - arch: arm64
-            runner: windows-11-arm
-            platform: windowsarm64
-            msystem: CLANGARM64
-            pkg_prefix: mingw-w64-clang-aarch64
-    runs-on: ${{ matrix.runner }}
+    runs-on: windows-latest
 
     steps:
       - name: Checkout
@@ -43,37 +29,37 @@ jobs:
           path: |
             third_party/cef
             third_party/cef_binary_*
-          key: cef-${{ matrix.platform }}-${{ hashFiles('CEF_VERSION') }}
+          key: cef-windows64-${{ hashFiles('CEF_VERSION') }}
 
       - name: Download CEF
         run: |
-          python dev/tools/download_cef.py --platform ${{ matrix.platform }}
+          python dev/tools/download_cef.py --platform windows64
 
       - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
         with:
-          msystem: ${{ matrix.msystem }}
+          msystem: CLANG64
           install: >-
-            ${{ matrix.pkg_prefix }}-cc
-            ${{ matrix.pkg_prefix }}-meson
-            ${{ matrix.pkg_prefix }}-pkgconf
-            ${{ matrix.pkg_prefix }}-ffmpeg
-            ${{ matrix.pkg_prefix }}-libplacebo
-            ${{ matrix.pkg_prefix }}-libass
-            ${{ matrix.pkg_prefix }}-vulkan-headers
-            ${{ matrix.pkg_prefix }}-vulkan-loader
-            ${{ matrix.pkg_prefix }}-shaderc
-            ${{ matrix.pkg_prefix }}-spirv-cross
+            mingw-w64-clang-x86_64-cc
+            mingw-w64-clang-x86_64-meson
+            mingw-w64-clang-x86_64-pkgconf
+            mingw-w64-clang-x86_64-ffmpeg
+            mingw-w64-clang-x86_64-libplacebo
+            mingw-w64-clang-x86_64-libass
+            mingw-w64-clang-x86_64-vulkan-headers
+            mingw-w64-clang-x86_64-vulkan-loader
+            mingw-w64-clang-x86_64-shaderc
+            mingw-w64-clang-x86_64-spirv-cross
 
       - name: Build mpv from source
         shell: pwsh
         run: |
-          dev\windows\build_mpv_source.ps1 -Arch ${{ matrix.arch }} -Force
+          dev\\windows\\build_mpv_source.ps1 -Arch x64 -Force
 
       - name: Configure and build
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" ${{ matrix.arch }}
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
           cmake -B build -G Ninja ^
             -DCMAKE_BUILD_TYPE=RelWithDebInfo ^
             -DEXTERNAL_MPV_DIR=%CD%\third_party\mpv-install
@@ -89,5 +75,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: windows-${{ matrix.arch }}
+          name: windows-x64
           path: dist/JellyfinDesktop-*.zip

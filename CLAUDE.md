@@ -2,6 +2,11 @@
 
 This is a personal fork of jellyfin/jellyfin-desktop. Only Windows x64 builds matter — changes that break other platforms are fine.
 
+## Architecture
+- **CEF** (Chromium Embedded Framework) — hosts jellyfin-web as an embedded browser; handles JS-to-C++ IPC for player control commands and renders the UI as an overlay texture above the video layer. Multi-process: browser process (main app, owns CefBrowser), renderer process (V8/Blink), GPU process. IPC via `CefProcessMessage`.
+- **mpv** (fork in `third_party/mpv`) — video playback; the desktop client injects native shims to override browser media playback
+- Wayland subsurface for video layer
+
 ## Constraints
 - **No hand-rolled JSON** — never manually construct or parse JSON with string concatenation, manual escaping, or homebrew parsers. Always use a proper JSON library or API (e.g. CEF's `CefParseJSON`/`CefWriteJSON`, or a vendored library if CEF isn't available in that context).
 - **No artificial heartbeats/polling** - event-driven architecture only. Never use timeouts as a workaround for proper event integration. No arbitrary timeout-based bailouts in shutdown paths either — fix the root cause instead.
